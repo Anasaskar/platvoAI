@@ -39,11 +39,17 @@ function Footer() {
           </div>
         </div>
 
-        {/* Copyright */}
         <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-border/40">
-          <p className="text-center text-xs sm:text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Platvo. All rights reserved.
-          </p>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
+            <div className="flex gap-4 text-sm text-muted-foreground">
+              <Link href="/about" className="hover:text-foreground transition-colors">About Us</Link>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Platvo. All rights reserved.
+            </p>
+          </div>
         </div>
       </div>
     </footer>
