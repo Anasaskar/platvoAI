@@ -20,6 +20,12 @@ const fallbackModels: ChatModel[] = [
     iconUrl: "/1702059841openai-icon-png.png",
   },
   {
+    id: "openai/gpt-5.4",
+    name: "GPT-5.4",
+    description: "OpenAI's latest GPT-5.4 frontier model with advanced reasoning and computer use",
+    iconUrl: "/1702059841openai-icon-png.png",
+  },
+  {
     id: "google/gemini-3.1-pro-preview",
     name: "Gemini 3.1 Pro",
     description: "Google's frontier reasoning model with enhanced software engineering performance and 1M context window",
@@ -68,12 +74,6 @@ const fallbackModels: ChatModel[] = [
     description: "Perplexity's advanced search model with real-time web search capabilities",
     iconUrl: "/perplexity-color.png",
   },
-  {
-    id: "openai/gpt-5.4",
-    name: "GPT-5.4",
-    description: "OpenAI's latest GPT-5.4 model with advanced reasoning and computer use",
-    iconUrl: "/1702059841openai-icon-png.png",
-  },
 ];
 
 // Try to import generated models, fallback to default if not available
@@ -96,36 +96,10 @@ try {
 /**
  * Get the list of available chat models
  * Uses generated models if available, otherwise falls back to default models
- * Always includes GPT-5.4 (not available through OpenRouter, uses OpenAI API directly)
+ * All models are routed through OpenRouter
  */
 export function getChatModels(): ChatModel[] {
-  const baseModels = generatedModels || fallbackModels;
-
-  // Always include GPT-5.4 in the list
-  // GPT-5.4 is not available through OpenRouter, so we add it manually
-  // The provider will handle whether it can actually be used (checks for OPENAI_API_KEY)
-  const gpt54Model: ChatModel = {
-    id: "openai/gpt-5.4",
-    name: "GPT-5.4",
-    description: "OpenAI's latest GPT-5.4 model with advanced reasoning and computer use",
-    iconUrl: "/1702059841openai-icon-png.png",
-  };
-
-  // Check if GPT-5.4 is already in the list
-  const hasGpt54 = baseModels.some(m => m.id === "openai/gpt-5.4");
-
-  // Add GPT-5.4 if it's not already in the list
-  // Insert it after GPT-4o Mini to keep all ChatGPT models grouped at the top
-  if (!hasGpt54) {
-    const lastOpenAiIndex = baseModels.reduce((lastIdx, m, idx) =>
-      m.id.startsWith("openai/") ? idx : lastIdx, -1);
-    const insertAt = lastOpenAiIndex + 1;
-    const result = [...baseModels];
-    result.splice(insertAt, 0, gpt54Model);
-    return result;
-  }
-
-  return baseModels;
+  return generatedModels || fallbackModels;
 }
 
 // Export the models array for backward compatibility

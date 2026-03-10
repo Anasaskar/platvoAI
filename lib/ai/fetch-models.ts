@@ -61,6 +61,7 @@ export async function fetchOpenRouterModels(): Promise<ChatModel[]> {
       // --- ChatGPT (top) ---
       { pattern: "gpt-4o", displayName: "GPT-4o", provider: "openai" },
       { pattern: "gpt-4o-mini", displayName: "GPT-4o Mini", provider: "openai" },
+      { pattern: "gpt-5.4", displayName: "GPT-5.4", provider: "openai" },
       // --- Gemini (right under ChatGPT) ---
       { pattern: "gemini-3.1-pro-preview", displayName: "Gemini 3.1 Pro", provider: "google" },
       { pattern: "gemini-3.1-flash-lite", displayName: "Gemini 3.1 Flash Lite", provider: "google" },
@@ -130,6 +131,11 @@ export async function fetchOpenRouterModels(): Promise<ChatModel[]> {
             (modelIdLower.includes("gpt-4o-mini") &&
               !modelIdLower.includes("gpt-4o-mini-audio") &&
               /\d{4}-\d{2}-\d{2}/.test(modelIdLower)));
+        }
+
+        if (patternLower === "gpt-5.4") {
+          // Match openai/gpt-5.4 exactly
+          return modelIdLower === "openai/gpt-5.4";
         }
 
         if (patternLower === "gemini-3.1-pro-preview") {
