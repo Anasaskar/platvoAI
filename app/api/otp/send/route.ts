@@ -40,9 +40,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[OTP SEND ERROR]", error);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[OTP SEND ERROR]", message);
     return NextResponse.json(
-      { error: "Failed to send verification code" },
+      { error: "Failed to send verification code", detail: message },
       { status: 500 }
     );
   }
