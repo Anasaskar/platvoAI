@@ -62,6 +62,7 @@ services:
       - POSTFIX_myorigin=platvo.com
       - POSTFIX_smtp_tls_security_level=may
       - POSTFIX_smtpd_tls_security_level=none
+      - POSTFIX_inet_protocols=ipv4
     volumes:
       - /etc/opendkim/keys/platvo.com/mail.private:/etc/opendkim/mail.private:ro
     restart: unless-stopped
