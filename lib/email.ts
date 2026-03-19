@@ -1,13 +1,17 @@
 import nodemailer from "nodemailer";
 
+const hasAuth = process.env.SMTP_USER && process.env.SMTP_PASS;
+
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || "465"),
+  host: process.env.SMTP_HOST || "host.docker.internal",
+  port: parseInt(process.env.SMTP_PORT || "25"),
   secure: process.env.SMTP_SECURE === "true",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
+  // Only add auth block when credentials are provided (not needed for local Postfix)
+  ...(hasAuth
+    ? { auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } }
+    : {}),
+  // Disable strict TLS for local relay
+  tls: { rejectUnauthorized: false },
 });
 
 export async function sendOtpEmail(to: string, otp: string, name?: string) {
