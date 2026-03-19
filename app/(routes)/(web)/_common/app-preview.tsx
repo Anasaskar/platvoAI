@@ -10,7 +10,7 @@ const AppPreview = () => {
             <div className="bg-background rounded-lg relative mx-auto overflow-hidden border border-transparent shadow-xl shadow-black/10 ring-1 ring-black/10">
               <div style={{ position: "relative", paddingTop: "56.25%" }}>
                 <iframe
-                  src="https://player.mediadelivery.net/embed/591792/787062f3-9e8a-455c-9fd2-abc360283e1c?autoplay=true&loop=true&muted=true&preload=true&responsive=true"
+                  src="https://player.mediadelivery.net/embed/591792/e4141ee9-73a1-47b3-ae5b-55e30a0bebe8?autoplay=true&loop=true&muted=true&preload=true&responsive=true"
                   loading="lazy"
                   style={{
                     border: 0,
