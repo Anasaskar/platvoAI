@@ -34,7 +34,7 @@ const Header = ({ title, showActions = false }: Props) => {
         <div
           className={cn(
             "pt-5",
-            open && "w-full !max-w-full lg:p-[10px_0_0_250px]"
+            open && "w-full !max-w-full lg:ps-[250px]"
           )}
         >
           <h2 className="text-xl lg:text-2xl font-semibold">{title}</h2>
@@ -45,7 +45,7 @@ const Header = ({ title, showActions = false }: Props) => {
         <div
           className={cn(
             "w-full flex items-center justify-between",
-            open && "w-full !max-w-full lg:!p-[0_0_0_250px]"
+            open && "w-full !max-w-full lg:ps-[250px]"
           )}
         >
           <h2>{title}</h2>

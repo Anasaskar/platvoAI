@@ -42,6 +42,23 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Prevent RTL flash: apply language/direction before React hydrates */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var lang = localStorage.getItem('language') || 'en';
+                  var html = document.documentElement;
+                  html.setAttribute('lang', lang);
+                  html.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geist.variable} ${ibmPlexSansArabic.variable} font-sans antialiased`}
       >
