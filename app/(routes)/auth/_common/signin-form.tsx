@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { RiLoader2Line } from "@remixicon/react";
+import { useTranslation } from "@/lib/i18n";
 import {
   Card,
   CardContent,
@@ -37,6 +38,7 @@ type SignInFormValues = z.infer<typeof signInSchema>;
 const SignInForm = () => {
   const router = useRouter();
   const { setBearerToken } = useAuthToken();
+  const t = useTranslation();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -97,8 +99,8 @@ const SignInForm = () => {
     <div className="flex flex-col gap-6">
       <Card className="!bg-transparent border-0">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome back</CardTitle>
-          <CardDescription>Login with your Platvo account</CardDescription>
+          <CardTitle className="text-xl">{t("auth.welcomeBack")}</CardTitle>
+          <CardDescription>{t("auth.loginDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -108,10 +110,10 @@ const SignInForm = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t("auth.email")}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="johndoe@example.com"
+                        placeholder={t("auth.emailPlaceholder")}
                         type="email"
                         {...field}
                       />
@@ -126,9 +128,9 @@ const SignInForm = () => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("auth.password")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="*****" type="password" {...field} />
+                      <Input placeholder={t("auth.passwordPlaceholder")} type="password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -143,7 +145,7 @@ const SignInForm = () => {
                 {isLoading && (
                   <RiLoader2Line className="w-4 h-4 animate-spin" />
                 )}
-                Sign In
+                {t("auth.signIn")}
               </Button>
 
               <div className="relative my-2">
@@ -152,7 +154,7 @@ const SignInForm = () => {
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-background px-2 text-muted-foreground">
-                    or continue with
+                    {t("auth.orContinueWith")}
                   </span>
                 </div>
               </div>
@@ -171,7 +173,7 @@ const SignInForm = () => {
                   setIsLoading(false);
                 }}
               >
-                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                <svg className="me-2 h-4 w-4" viewBox="0 0 24 24">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
                     fill="#4285F4"
@@ -189,16 +191,16 @@ const SignInForm = () => {
                     fill="#EA4335"
                   />
                 </svg>
-                Continue with Google
+                {t("auth.continueWithGoogle")}
               </Button>
 
               <div className="text-center text-sm">
-                Dont have an account?{" "}
+                {t("auth.dontHaveAccount")}{" "}
                 <Link
                   href="/auth/sign-up"
                   className="underline underline-offset-4"
                 >
-                  Sign up
+                  {t("auth.signUp")}
                 </Link>
               </div>
             </form>

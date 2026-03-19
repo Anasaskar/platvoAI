@@ -70,7 +70,7 @@ const ModelsPricingSection = () => {
             >
               <Link href="/pricing">
                 {t("landing.getStartedNow")}
-                <RiExternalLinkLine className="h-5 w-5 ml-2" />
+                <RiExternalLinkLine className="h-5 w-5 ms-2" />
               </Link>
             </Button>
           </div>

@@ -26,7 +26,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import Footer from "../(web)/_common/footer";
 
 export default function PricingPage() {
   const { language, updateLanguage } = useLanguage();
@@ -128,100 +127,11 @@ export default function PricingPage() {
   ];
 
   return (
-    <main className={cn("min-h-dvh w-full relative", isArabic && "rtl")}>
-      {/* Background */}
-      <div
-        className="
-          absolute inset-0 z-0
-          bg-[radial-gradient(125%_125%_at_50%_10%,#ffffff_40%,#10b981_100%)]
-          dark:bg-[radial-gradient(125%_125%_at_50%_10%,#0f172a_40%,#10b981_100%)]
-        "
-      >
-        <div
-          className="absolute inset-0 dark:hidden"
-          style={{
-            backgroundImage: `
-              linear-gradient(to right, rgba(226,232,240,0.15) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(226,232,240,0.15) 1px, transparent 1px)
-            `,
-            backgroundSize: "60px 60px",
-            WebkitMaskImage:
-              "radial-gradient(circle at 50% 30%, rgba(0,0,0,0.9) 70%, transparent 100%)",
-            maskImage:
-              "radial-gradient(circle at 50% 30%, rgba(0,0,0,0.9) 70%, transparent 100%)",
-          }}
-        />
-        <div
-          className="absolute inset-0 hidden dark:block"
-          style={{
-            backgroundImage: `
-              linear-gradient(to right, rgba(51,65,85,0.2) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(51,65,85,0.2) 1px, transparent 1px)
-            `,
-            backgroundSize: "60px 60px",
-            WebkitMaskImage:
-              "radial-gradient(circle at 50% 30%, rgba(0,0,0,0.85) 65%, transparent 100%)",
-            maskImage:
-              "radial-gradient(circle at 50% 30%, rgba(0,0,0,0.85) 65%, transparent 100%)",
-          }}
-        />
-      </div>
-
-      {/* Content */}
+    <main className="w-full relative">
       <div className="relative z-10">
-        <div className="mx-auto max-w-6xl px-4 py-6 md:py-8">
-          {/* Navbar */}
-          <header>
-            <nav
-              className="mx-auto mt-px relative flex items-center justify-between gap-2 sm:gap-3
-                rounded-full border bg-white/70 px-2 sm:px-4 py-1.5 sm:py-2 shadow-sm backdrop-blur-md
-                dark:bg-black/30"
-              aria-label="Primary"
-            >
-              <Logo url="/" />
-              <ul className="hidden items-center gap-6 text-sm xl:text-base font-normal md:flex absolute left-1/2 transform -translate-x-1/2">
-                <li>
-                  <Link href="/" className="transition-colors hover:text-foreground">
-                    Home
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/pricing" className="transition-colors text-foreground font-medium">
-                    {t("landing.pricing")}
-                  </Link>
-                </li>
-              </ul>
-              <div className="flex items-center gap-1 sm:gap-2 ml-auto">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => updateLanguage(language === "ar" ? "en" : "ar")}
-                  className="text-xs sm:text-sm inline-flex px-2 sm:px-3"
-                >
-                  {language === "ar" ? "EN" : "عربي"}
-                </Button>
-                <Link
-                  href="/auth/sign-in"
-                  className="hidden text-sm transition-colors hover:text-foreground md:inline"
-                >
-                  {t("landing.signIn")}
-                </Link>
-                <Link href="/auth/sign-up" aria-label={t("landing.tryForFree")}>
-                  <HoverBorderGradient
-                    containerClassName="rounded-full"
-                    as="button"
-                    className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 cursor-pointer"
-                  >
-                    <span className="text-xs sm:text-sm">{t("landing.tryForFree")}</span>
-                    <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
-                  </HoverBorderGradient>
-                </Link>
-              </div>
-            </nav>
-          </header>
-
+        <div className="mx-auto max-w-6xl px-4 pb-6 md:pb-8">
           {/* Hero */}
-          <div className="text-center mt-16 sm:mt-20 md:mt-24 mb-12 sm:mb-16">
+          <div className="text-center mt-8 sm:mt-12 md:mt-16 mb-12 sm:mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-6">
               <Sparkles className="h-4 w-4 text-emerald-500" />
               <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
@@ -306,7 +216,7 @@ export default function PricingPage() {
               >
                 <Link href="/auth/sign-up">
                   {isArabic ? "ابدأ مجاناً" : "Get Started Free"}
-                  <ArrowRight className={cn("h-4 w-4", isArabic ? "mr-2 rotate-180" : "ml-2")} />
+                  <ArrowRight className={cn("h-4 w-4 ms-2", isArabic && "rotate-180")} />
                 </Link>
               </Button>
             </div>
@@ -424,9 +334,9 @@ export default function PricingPage() {
                   </span>
                 ) : (
                   <>
-                    <CreditCard className={cn("h-4 w-4", isArabic ? "ml-2" : "mr-2")} />
+                    <CreditCard className="h-4 w-4 me-2" />
                     {isArabic ? "ترقية إلى PRO" : "Upgrade to PRO"}
-                    <ArrowRight className={cn("h-4 w-4", isArabic ? "mr-2 rotate-180" : "ml-2")} />
+                    <ArrowRight className={cn("h-4 w-4 ms-2", isArabic && "rotate-180")} />
                   </>
                 )}
               </Button>
@@ -574,16 +484,10 @@ export default function PricingPage() {
                     <CollapsibleTrigger
                       className={cn(
                         "w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition-colors",
-                        "border-b border-gray-100 dark:border-gray-800/50 last:border-b-0",
-                        isArabic && "flex-row-reverse"
+                        "border-b border-gray-100 dark:border-gray-800/50 last:border-b-0"
                       )}
                     >
-                      <span
-                        className={cn(
-                          "font-medium text-gray-900 dark:text-white",
-                          isArabic ? "text-right" : "text-left"
-                        )}
-                      >
+                      <span className="font-medium text-gray-900 dark:text-white text-start">
                         {t(faq.question)}
                       </span>
                       <ChevronDown
@@ -594,12 +498,7 @@ export default function PricingPage() {
                       />
                     </CollapsibleTrigger>
                     <CollapsibleContent className="px-6 pb-4 text-gray-600 dark:text-gray-400">
-                      <p
-                        className={cn(
-                          "leading-relaxed pt-2 text-sm",
-                          isArabic && "text-right"
-                        )}
-                      >
+                      <p className="leading-relaxed pt-2 text-sm text-start">
                         {t(faq.answer)}
                       </p>
                     </CollapsibleContent>
@@ -654,7 +553,7 @@ export default function PricingPage() {
                   ) : (
                     <>
                       {isArabic ? "ترقية إلى PRO" : "Upgrade to PRO"}
-                      <ArrowRight className={cn("h-4 w-4", isArabic ? "mr-2 rotate-180" : "ml-2")} />
+                      <ArrowRight className={cn("h-4 w-4 ms-2", isArabic && "rotate-180")} />
                     </>
                   )}
                 </Button>
@@ -672,8 +571,6 @@ export default function PricingPage() {
             </div>
           </div>
         </div>
-
-        <Footer />
       </div>
     </main>
   );

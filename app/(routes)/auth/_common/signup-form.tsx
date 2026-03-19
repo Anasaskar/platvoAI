@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { RiLoader2Line } from "@remixicon/react";
+import { useTranslation } from "@/lib/i18n";
 import {
   Card,
   CardContent,
@@ -36,6 +37,7 @@ type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 const SignUpForm = () => {
   const router = useRouter();
+  const t = useTranslation();
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const form = useForm<SignUpFormValues>({
@@ -85,8 +87,8 @@ const SignUpForm = () => {
     <div className="flex flex-col gap-6">
       <Card className="!bg-transparent border-0">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Create an Account</CardTitle>
-          <CardDescription>Create a Platvo.ai account</CardDescription>
+          <CardTitle className="text-xl">{t("auth.createAccount")}</CardTitle>
+          <CardDescription>{t("auth.createAccountDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -96,9 +98,9 @@ const SignUpForm = () => {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>{t("auth.name")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input placeholder={t("auth.namePlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -109,10 +111,10 @@ const SignUpForm = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t("auth.email")}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="johndoe@example.com"
+                        placeholder={t("auth.emailPlaceholder")}
                         type="email"
                         {...field}
                       />
@@ -127,9 +129,9 @@ const SignUpForm = () => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("auth.password")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="*****" type="password" {...field} />
+                      <Input placeholder={t("auth.passwordPlaceholder")} type="password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -144,7 +146,7 @@ const SignUpForm = () => {
                 {isLoading && (
                   <RiLoader2Line className="w-4 h-4 animate-spin" />
                 )}
-                Sign Up
+                {t("auth.signUp")}
               </Button>
 
               <div className="relative my-2">
@@ -153,7 +155,7 @@ const SignUpForm = () => {
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-background px-2 text-muted-foreground">
-                    or continue with
+                    {t("auth.orContinueWith")}
                   </span>
                 </div>
               </div>
@@ -172,7 +174,7 @@ const SignUpForm = () => {
                   setIsLoading(false);
                 }}
               >
-                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                <svg className="me-2 h-4 w-4" viewBox="0 0 24 24">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
                     fill="#4285F4"
@@ -190,16 +192,16 @@ const SignUpForm = () => {
                     fill="#EA4335"
                   />
                 </svg>
-                Continue with Google
+                {t("auth.continueWithGoogle")}
               </Button>
 
               <div className="text-center text-sm">
-                Already have an account?{" "}
+                {t("auth.alreadyHaveAccount")}{" "}
                 <Link
                   href="/auth/sign-in"
                   className="underline underline-offset-4"
                 >
-                  Sign in
+                  {t("auth.signIn")}
                 </Link>
               </div>
             </form>

@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { Mail, Facebook } from "lucide-react";
 import Logo from "@/components/logo";
+import { useTranslation } from "@/lib/i18n";
 
 function Footer() {
+  const t = useTranslation();
 
   return (
     <footer className="relative mt-16 sm:mt-20 md:mt-24 border-t border-border/40 bg-background/50 backdrop-blur-sm">
@@ -40,15 +42,15 @@ function Footer() {
         </div>
 
         <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-border/40">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-start">
             <div className="flex gap-4 text-sm text-muted-foreground">
-              <Link href="/about" className="hover:text-foreground transition-colors">About Us</Link>
-              <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+              <Link href="/about" className="hover:text-foreground transition-colors">{t("footer.aboutUs")}</Link>
+              <Link href="/pricing" className="hover:text-foreground transition-colors">{t("footer.pricing")}</Link>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">{t("footer.privacyPolicy")}</Link>
+              <Link href="/terms" className="hover:text-foreground transition-colors">{t("footer.termsOfService")}</Link>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Platvo. All rights reserved.
+              © {new Date().getFullYear()} {t("footer.allRightsReserved")}
             </p>
           </div>
         </div>

@@ -68,7 +68,7 @@ const FAQSection = () => {
   };
 
   return (
-    <div className={cn("w-full mt-16", isArabic && "rtl")}>
+    <div className="w-full mt-16">
       <div className="w-full pl-3 mb-6">
         <h2 className="text-lg lg:text-xl font-medium">{t("billing.faq.title")}</h2>
       </div>
@@ -86,11 +86,10 @@ const FAQSection = () => {
                 className={cn(
                   "w-full px-6 py-4 flex items-center justify-between hover:bg-muted/50 transition-colors",
                   "border-b last:border-b-0",
-                  index === 0 && "border-t-0",
-                  isArabic && "flex-row-reverse"
+                  index === 0 && "border-t-0"
                 )}
               >
-                <span className={cn("font-medium text-left", isArabic && "text-right")}>
+                <span className="font-medium text-start">
                   {t(faq.question)}
                 </span>
                 <ChevronDown
@@ -101,7 +100,7 @@ const FAQSection = () => {
                 />
               </CollapsibleTrigger>
               <CollapsibleContent className="px-6 pb-4 text-muted-foreground">
-                <p className={cn("leading-relaxed pt-2", isArabic && "text-right")}>
+                <p className="leading-relaxed pt-2 text-start">
                   {t(faq.answer)}
                 </p>
               </CollapsibleContent>

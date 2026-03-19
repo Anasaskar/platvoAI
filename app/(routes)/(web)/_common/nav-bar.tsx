@@ -43,7 +43,7 @@ function Navbar() {
           </li>
         </ul>
 
-        <div className="flex items-center gap-1 sm:gap-2 ml-auto">
+        <div className="flex items-center gap-1 sm:gap-2 ms-auto">
           <Button
             variant="ghost"
             size="sm"

@@ -57,7 +57,7 @@ const Hero = () => {
             className="rounded-full px-6 py-5 sm:py-6 text-sm sm:text-base hover:bg-muted/20"
             asChild
           >
-            <Link href="/learn-more">{t("landing.learnMore")}</Link>
+            <Link href="#features">{t("landing.learnMore")}</Link>
           </Button>
         </div>
       </div>
