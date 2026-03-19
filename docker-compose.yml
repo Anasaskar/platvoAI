@@ -44,7 +44,7 @@ services:
       - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
       - TAVILY_API_KEY=${TAVILY_API_KEY}
       - SMTP_HOST=smtp
-      - SMTP_PORT=587
+      - SMTP_PORT=25
       - SMTP_SECURE=false
       - SMTP_FROM=noreply@platvo.com
     restart: unless-stopped
