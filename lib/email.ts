@@ -1,8 +1,8 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function sendOtpEmail(to: string, otp: string, name?: string) {
+  // Lazily instantiate so the key is only read at runtime, not at build time
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const from = process.env.RESEND_FROM || "Platvo <noreply@platvo.com>";
 
   const html = `
