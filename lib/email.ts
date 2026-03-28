@@ -1,21 +1,9 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const hasAuth = process.env.SMTP_USER && process.env.SMTP_PASS;
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "host.docker.internal",
-  port: parseInt(process.env.SMTP_PORT || "25"),
-  secure: process.env.SMTP_SECURE === "true",
-  // Only add auth block when credentials are provided (not needed for local Postfix)
-  ...(hasAuth
-    ? { auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } }
-    : {}),
-  // Disable strict TLS for local relay
-  tls: { rejectUnauthorized: false },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendOtpEmail(to: string, otp: string, name?: string) {
-  const fromName = process.env.SMTP_FROM || "Platvo <noreply@platvo.com>";
+  const from = process.env.RESEND_FROM || "Platvo <noreply@platvo.com>";
 
   const html = `
 <!DOCTYPE html>
@@ -79,8 +67,8 @@ export async function sendOtpEmail(to: string, otp: string, name?: string) {
 </html>
   `.trim();
 
-  await transporter.sendMail({
-    from: fromName,
+  await resend.emails.send({
+    from,
     to,
     subject: `${otp} is your Platvo verification code`,
     html,
