@@ -18,6 +18,20 @@ type GenericSubscriptionResponse = {
   message?: string;
 };
 
+export type SubscriptionStatus = {
+  id: string;
+  plan: PlanEnumType;
+  status: string;
+  periodStart: string | null;
+  periodEnd: string | null;
+  cancelAtPeriodEnd: boolean | null;
+  stripeSubscriptionId: string | null;
+  creditsUsed: number;
+  creditsLimit: number;
+  imagesUsed: number;
+  imagesLimit: number;
+};
+
 async function parseSubscriptionResponse(
   response: Response,
   defaultMessage: string
@@ -128,6 +142,29 @@ export const useReactivateSubscription = () => {
     onError: (error) => {
       toast.error(error?.message ?? "Failed to reactivate subscription");
     },
+  });
+};
+
+export const useSubscriptionStatus = () => {
+  return useQuery<SubscriptionStatus | null>({
+    queryKey: ["subscription-status"],
+    queryFn: async () => {
+      const response = await api.subscription.status.$get();
+      if (!response.ok) {
+        throw new Error("Failed to fetch subscription status");
+      }
+
+      const result = await response.json();
+      return result.data
+        ? {
+            ...result.data,
+            plan: result.data.plan as PlanEnumType,
+          }
+        : null;
+    },
+    refetchOnMount: true,
+    refetchOnReconnect: true,
+    retry: false,
   });
 };
 

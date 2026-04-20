@@ -7,7 +7,6 @@ import React, {
   SetStateAction,
   useCallback,
   useState,
-  useRef,
   useEffect,
 } from "react";
 import {
@@ -27,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { MODEL_OPTIONS, chatModels } from "@/lib/ai/models";
 import { ModelIcon } from "./model-icon";
 import { useLocalChat } from "@/hooks/use-localchat";
-import { ArrowUpIcon, XIcon, Search, LucideFilePlus, ImageIcon } from "lucide-react";
+import { ArrowUpIcon, XIcon, Search, LucideFilePlus, ImageIcon, LockIcon } from "lucide-react";
 import { AVAILABLE_TOOLS, AvailableToolType, SearchMode } from "@/lib/ai/tools/constant";
 import { Button } from "../ui/button";
 import { RiSquareFill } from "@remixicon/react";
@@ -35,6 +34,12 @@ import { toast } from "sonner";
 import useViewState from "@/hooks/use-view-state";
 import { getTextDirection } from "@/lib/utils/language-detection";
 import { useTranslation } from "@/lib/i18n";
+import {
+  FREE_MODEL_UPGRADE_MESSAGE,
+  getDefaultModelForPlan,
+  isModelLockedForPlan,
+  type PlanAccessPlan,
+} from "@/lib/subscription/plan-access";
 
 type Props = {
   chatId: string;
@@ -47,6 +52,8 @@ type Props = {
   messages: Array<UIMessage>;
   sendMessage: UseChatHelpers<UIMessage>["sendMessage"];
   initialModelId: string;
+  subscriptionPlan?: PlanAccessPlan;
+  isSubscriptionStatusLoading?: boolean;
   disabled?: boolean;
   stop: () => void;
 };
@@ -60,8 +67,9 @@ const ChatInput: FC<Props> = ({
   setInput,
   sendMessage,
   disabled,
-  hasReachedLimit,
   stop,
+  subscriptionPlan,
+  isSubscriptionStatusLoading = false,
 }) => {
   const { localModelId, setLocalModelId } = useLocalChat();
   const { setIsChatView } = useViewState();
@@ -81,9 +89,65 @@ const ChatInput: FC<Props> = ({
     setInput(newValue);
   };
 
-  const handleSelect = (value: string) => {
+  const showUpgradeToast = useCallback(() => {
+    toast.info(FREE_MODEL_UPGRADE_MESSAGE, {
+      action: {
+        label: "Upgrade",
+        onClick: () => {
+          window.location.href = "/billing";
+        },
+      },
+    });
+  }, []);
+
+  const handleSelect = useCallback((value: string) => {
+    const model = chatModels.find((m) => m.id === value);
+
+    if (
+      !isSubscriptionStatusLoading &&
+      model &&
+      isModelLockedForPlan(subscriptionPlan, model)
+    ) {
+      showUpgradeToast();
+      return;
+    }
+
     setLocalModelId(value);
-  };
+  }, [
+    isSubscriptionStatusLoading,
+    setLocalModelId,
+    showUpgradeToast,
+    subscriptionPlan,
+  ]);
+
+  useEffect(() => {
+    if (isSubscriptionStatusLoading) {
+      return;
+    }
+
+    const selectedModel = chatModels.find((m) => m.id === selectedModelId);
+    if (
+      !selectedModel ||
+      !isModelLockedForPlan(subscriptionPlan, selectedModel)
+    ) {
+      return;
+    }
+
+    const defaultModel = getDefaultModelForPlan(
+      subscriptionPlan,
+      chatModels,
+      selectedModelId
+    );
+
+    if (defaultModel && defaultModel.id !== selectedModelId) {
+      setLocalModelId(defaultModel.id);
+    }
+  }, [
+    isSubscriptionStatusLoading,
+    selectedModelId,
+    setLocalModelId,
+    subscriptionPlan,
+  ]);
 
 
   const removeTool = () => {
@@ -113,6 +177,16 @@ const ChatInput: FC<Props> = ({
 
     if (status === "streaming") {
       toast.error(t("messages.waitForResponse"));
+      return;
+    }
+
+    const selectedModel = chatModels.find((m) => m.id === selectedModelId);
+    if (
+      !isSubscriptionStatusLoading &&
+      selectedModel &&
+      isModelLockedForPlan(subscriptionPlan, selectedModel)
+    ) {
+      showUpgradeToast();
       return;
     }
 
@@ -154,9 +228,12 @@ const ChatInput: FC<Props> = ({
     disabled,
     selectedTool,
     selectedModelId,
+    subscriptionPlan,
+    isSubscriptionStatusLoading,
     searchMode,
     setInput,
     sendMessage,
+    showUpgradeToast,
     setIsChatView,
     t,
   ]);
@@ -221,6 +298,8 @@ const ChatInput: FC<Props> = ({
           <ModelSelector
             selectedModelId={selectedModelId}
             onSelect={handleSelect}
+            subscriptionPlan={subscriptionPlan}
+            isSubscriptionStatusLoading={isSubscriptionStatusLoading}
           />
 
           {/* Web Search Button */}
@@ -316,9 +395,13 @@ const ChatInput: FC<Props> = ({
 function ModelSelector({
   selectedModelId,
   onSelect,
+  subscriptionPlan,
+  isSubscriptionStatusLoading,
 }: {
   selectedModelId: string;
   onSelect: (value: string) => void;
+  subscriptionPlan?: PlanAccessPlan;
+  isSubscriptionStatusLoading: boolean;
 }) {
   return (
     <>
@@ -353,18 +436,34 @@ function ModelSelector({
         <PromptInputModelSelectContent>
           {MODEL_OPTIONS.map((model) => {
             const modelData = chatModels.find((m) => m.id === model.value);
+            const isLocked =
+              !isSubscriptionStatusLoading &&
+              !!modelData &&
+              isModelLockedForPlan(subscriptionPlan, modelData);
             return (
               <PromptInputModelSelectItem
                 key={model.value}
                 value={model.value}
-                className="flex items-center gap-2"
+                aria-disabled={isLocked}
+                className={cn(
+                  "flex items-center gap-2 pr-14",
+                  isLocked && "cursor-not-allowed text-muted-foreground opacity-75"
+                )}
               >
                 <ModelIcon
                   iconUrl={modelData?.iconUrl}
                   size={16}
                   alt={`${model.label} icon`}
                 />
-                {model.label}
+                <span className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className="truncate">{model.label}</span>
+                  {isLocked && (
+                    <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-medium uppercase text-primary">
+                      <LockIcon size={11} />
+                      Pro
+                    </span>
+                  )}
+                </span>
               </PromptInputModelSelectItem>
             );
           })}

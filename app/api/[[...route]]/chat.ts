@@ -22,6 +22,12 @@ import { extractWebUrl } from "@/lib/ai/tools/extract-url";
 import { generateImage } from "@/lib/ai/tools/generate-image";
 import { getSystemPrompt } from "@/lib/ai/prompt";
 import { checkCreditLimit, deductCredit } from "@/lib/credits/credit-manager";
+import { getCurrentSubscription } from "@/lib/subscription/current-subscription";
+import {
+  FREE_MODEL_UPGRADE_MESSAGE,
+  getEffectiveMaxOutputTokens,
+  isModelLockedForPlan,
+} from "@/lib/subscription/plan-access";
 
 
 const chatSchema = z.object({
@@ -30,6 +36,7 @@ const chatSchema = z.object({
   selectedModelId: z.string() as z.ZodType<ChatModel["id"]>,
   selectedToolName: z.string().nullable(),
   searchMode: z.enum(["normal", "none"]).optional().default("none"),
+  maxOutputTokens: z.number().int().positive().optional(),
 });
 const chatIdSchema = z.object({
   id: z.string().min(1),
@@ -39,13 +46,67 @@ export const chatRoute = new Hono()
   .post("/", zValidator("json", chatSchema), getAuthUser, async (c) => {
     try {
       const user = c.get("user");
-      const { id, message, selectedToolName, searchMode = "none" } =
+      const { id, message, selectedToolName, searchMode = "none", maxOutputTokens } =
         c.req.valid("json");
       let { selectedModelId } = c.req.valid("json");
+      const subscription = await getCurrentSubscription(user.id);
+      const plan = subscription?.plan;
 
       // #region agent log
       fetch('http://127.0.0.1:7247/ingest/63d22a0a-43cd-47a2-8361-a25e1315cce6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat.ts:47',message:'Chat request received',data:{selectedModelId,searchMode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
+
+      let foundModel = chatModels.find(m => m.id === selectedModelId);
+
+      // Validate that the selected model exists in available models
+      if (!foundModel) {
+        // #region agent log
+        fetch('http://127.0.0.1:7247/ingest/63d22a0a-43cd-47a2-8361-a25e1315cce6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat.ts:225',message:'Invalid model ID - not found',data:{selectedModelId,availableModelIds:chatModels.map(m=>m.id)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
+        // #endregion
+
+        // Try to find a similar model (e.g., if user selected audio variant, find the standard one)
+        const similarModel = chatModels.find(m => {
+          const selectedLower = selectedModelId.toLowerCase();
+          const modelLower = m.id.toLowerCase();
+          // For GPT models, try to find the standard version
+          if (selectedLower.includes("gpt-4o") && !selectedLower.includes("mini")) {
+            return modelLower.includes("gpt-4o") &&
+                   !modelLower.includes("mini") &&
+                   !modelLower.includes("audio") &&
+                   !modelLower.includes("preview");
+          }
+          if (selectedLower.includes("gpt-4o-mini")) {
+            return modelLower.includes("gpt-4o-mini") &&
+                   !modelLower.includes("audio") &&
+                   !modelLower.includes("preview");
+          }
+          return false;
+        });
+
+        if (similarModel) {
+          // #region agent log
+          fetch('http://127.0.0.1:7247/ingest/63d22a0a-43cd-47a2-8361-a25e1315cce6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat.ts:245',message:'Found similar model, using it',data:{originalModelId:selectedModelId,similarModelId:similarModel.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'J'})}).catch(()=>{});
+          // #endregion
+          // Use the similar model instead
+          selectedModelId = similarModel.id;
+          foundModel = similarModel;
+        } else {
+          throw new HTTPException(400, {
+            message: `Model "${selectedModelId}" is not available. Please select a different model.`
+          });
+        }
+      }
+
+      if (isModelLockedForPlan(plan, foundModel)) {
+        throw new HTTPException(403, {
+          message: FREE_MODEL_UPGRADE_MESSAGE,
+        });
+      }
+
+      const effectiveMaxOutputTokens = getEffectiveMaxOutputTokens(
+        plan,
+        maxOutputTokens
+      );
 
       // Check credit limit before processing
       const creditCheck = await checkCreditLimit(user.id);
@@ -131,49 +192,6 @@ export const chatRoute = new Hono()
       });
 
       
-      // #region agent log
-      const foundModel = chatModels.find(m => m.id === selectedModelId);
-      fetch('http://127.0.0.1:7247/ingest/63d22a0a-43cd-47a2-8361-a25e1315cce6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat.ts:221',message:'Model lookup',data:{selectedModelId,foundModelId:foundModel?.id,foundModelName:foundModel?.name,allModelIds:chatModels.map(m=>m.id).slice(0,5)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
-
-      // Validate that the selected model exists in available models
-      if (!foundModel) {
-        // #region agent log
-        fetch('http://127.0.0.1:7247/ingest/63d22a0a-43cd-47a2-8361-a25e1315cce6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat.ts:225',message:'Invalid model ID - not found',data:{selectedModelId,availableModelIds:chatModels.map(m=>m.id)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'I'})}).catch(()=>{});
-        // #endregion
-        
-        // Try to find a similar model (e.g., if user selected audio variant, find the standard one)
-        const similarModel = chatModels.find(m => {
-          const selectedLower = selectedModelId.toLowerCase();
-          const modelLower = m.id.toLowerCase();
-          // For GPT models, try to find the standard version
-          if (selectedLower.includes("gpt-4o") && !selectedLower.includes("mini")) {
-            return modelLower.includes("gpt-4o") && 
-                   !modelLower.includes("mini") &&
-                   !modelLower.includes("audio") &&
-                   !modelLower.includes("preview");
-          }
-          if (selectedLower.includes("gpt-4o-mini")) {
-            return modelLower.includes("gpt-4o-mini") &&
-                   !modelLower.includes("audio") &&
-                   !modelLower.includes("preview");
-          }
-          return false;
-        });
-
-        if (similarModel) {
-          // #region agent log
-          fetch('http://127.0.0.1:7247/ingest/63d22a0a-43cd-47a2-8361-a25e1315cce6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat.ts:245',message:'Found similar model, using it',data:{originalModelId:selectedModelId,similarModelId:similarModel.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'J'})}).catch(()=>{});
-          // #endregion
-          // Use the similar model instead
-          selectedModelId = similarModel.id;
-        } else {
-          throw new HTTPException(400, { 
-            message: `Model "${selectedModelId}" is not available. Please select a different model.` 
-          });
-        }
-      }
-
       // #region agent log
       fetch('http://127.0.0.1:7247/ingest/63d22a0a-43cd-47a2-8361-a25e1315cce6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat.ts:240',message:'Getting model provider',data:{selectedModelId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
       // #endregion
@@ -339,6 +357,9 @@ export const chatRoute = new Hono()
         }),
         messages: finalModelMessages,
         stopWhen: stepCountIs(5),
+        ...(effectiveMaxOutputTokens
+          ? { maxOutputTokens: effectiveMaxOutputTokens }
+          : {}),
         onError: (error: unknown) => {
           console.log("Streaming error", error);
           // #region agent log

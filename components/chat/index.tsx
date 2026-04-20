@@ -1,15 +1,15 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useChat } from "@ai-sdk/react";
-import Link from "next/link";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { generateUUID } from "@/lib/utils";
-import { DEFAULT_MODEL_ID } from "@/lib/ai/models";
+import { DEFAULT_MODEL_ID, chatModels } from "@/lib/ai/models";
 import ChatInput from "./chat-input";
 import ChatMessages from "./chat-messages";
 import { ToolNameEnum } from "@/lib/ai/tools/constant";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCheckGenerations } from "@/features/use-subscription";
+import { useSubscriptionStatus } from "@/features/use-subscription";
+import { getDefaultModelForPlan } from "@/lib/subscription/plan-access";
 
 type Props = {
   chatId: string;
@@ -29,9 +29,14 @@ const ChatInterface = (props: Props) => {
   } = props;
   const queryClient = useQueryClient();
   const [input, setInput] = useState<string>("");
-
-  // Subscription check (currently unused but kept for future use)
-  // const { data: subscription } = useCheckGenerations();
+  const {
+    data: subscriptionStatus,
+    isLoading: isSubscriptionStatusLoading,
+  } = useSubscriptionStatus();
+  const subscriptionPlan = subscriptionStatus?.plan;
+  const initialModelId =
+    getDefaultModelForPlan(subscriptionPlan, chatModels, DEFAULT_MODEL_ID)?.id ||
+    DEFAULT_MODEL_ID;
 
   console.log(chatId, "chatid");
 
@@ -47,7 +52,7 @@ const ChatInterface = (props: Props) => {
             body: {
               id,
               message: messages.at(-1),
-              selectedModelId: DEFAULT_MODEL_ID,
+              selectedModelId: initialModelId,
               ...body,
             },
           };
@@ -90,7 +95,9 @@ const ChatInterface = (props: Props) => {
           status={status}
           hasReachedLimit={hasReachedLimit}
           stop={stop}
-          initialModelId={DEFAULT_MODEL_ID}
+          initialModelId={initialModelId}
+          subscriptionPlan={subscriptionPlan}
+          isSubscriptionStatusLoading={isSubscriptionStatusLoading}
           sendMessage={sendMessage}
         />
       </div>
@@ -119,7 +126,9 @@ const ChatInterface = (props: Props) => {
             status={status}
             hasReachedLimit={hasReachedLimit}
             stop={stop}
-            initialModelId={DEFAULT_MODEL_ID}
+            initialModelId={initialModelId}
+            subscriptionPlan={subscriptionPlan}
+            isSubscriptionStatusLoading={isSubscriptionStatusLoading}
             sendMessage={sendMessage}
             disabled={inputDisabled}
           />
@@ -128,27 +137,5 @@ const ChatInterface = (props: Props) => {
     </div>
   );
 };
-
-function GenerationLimitAlert() {
-  return (
-    <div className="w-full absolute -top-6 mt-[0.3]">
-      <div
-        className="bg-primary/10 font-medium rounded-t-3xl
-        px-4 pt-1.5 pb-4 flex items-center justify-between text-xs w-full overflow-hidden"
-      >
-        <div className="break-words">
-          You’ve run out of free AI responses.{" "}
-          <Link
-            href="/billing"
-            className="text-primary font-semibold hover:underline"
-          >
-            Upgrade Platvo AI
-          </Link>
-          .
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default ChatInterface;
