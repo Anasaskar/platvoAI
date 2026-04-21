@@ -53,12 +53,25 @@ type AttachmentsContext = {
   remove: (id: string) => void;
   clear: () => void;
   openFileDialog: () => void;
+  isUploading: boolean;
   fileInputRef: RefObject<HTMLInputElement | null>;
 };
 
 const AttachmentsContext = createContext<AttachmentsContext | null>(null);
 
-type PromptInputAttachmentItem = FileUIPart & { id: string; size?: number };
+export type PromptInputUploadedAttachment = {
+  url: string;
+  mediaType?: string;
+  filename?: string;
+  fileId?: string;
+  size?: number;
+};
+
+export type PromptInputAttachmentItem = FileUIPart & {
+  id: string;
+  fileId?: string;
+  size?: number;
+};
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -212,7 +225,7 @@ export const PromptInputActionAddAttachments = ({
 
 export type PromptInputMessage = {
   text?: string;
-  files?: FileUIPart[];
+  files?: PromptInputAttachmentItem[];
 };
 
 export type PromptInputProps = Omit<
@@ -229,8 +242,9 @@ export type PromptInputProps = Omit<
   maxFiles?: number;
   maxFileSize?: number; // bytes
   maxTotalFileSize?: number; // bytes
+  onFileUpload?: (file: File) => Promise<PromptInputUploadedAttachment>;
   onError?: (err: {
-    code: "max_files" | "max_file_size" | "accept";
+    code: "max_files" | "max_file_size" | "accept" | "upload";
     message: string;
   }) => void;
   onSubmit: (
@@ -248,11 +262,13 @@ export const PromptInput = ({
   maxFiles,
   maxFileSize,
   maxTotalFileSize,
+  onFileUpload,
   onError,
   onSubmit,
   ...props
 }: PromptInputProps) => {
   const [items, setItems] = useState<PromptInputAttachmentItem[]>([]);
+  const [uploadingCount, setUploadingCount] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const anchorRef = useRef<HTMLSpanElement>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -350,17 +366,55 @@ export const PromptInput = ({
           message: "Some files were not added because they exceed the limit.",
         });
       }
+      const currentCapacity =
+        typeof maxFiles === "number"
+          ? Math.max(0, maxFiles - items.length)
+          : undefined;
+      const uploadable =
+        typeof currentCapacity === "number"
+          ? totalSized.slice(0, currentCapacity)
+          : totalSized;
+
+      if (uploadable.length === 0 && totalSized.length > 0) {
+        onError?.({
+          code: "max_files",
+          message: "Too many files.",
+        });
+        return;
+      }
+      if (uploadable.length < totalSized.length) {
+        onError?.({
+          code: "max_files",
+          message: "Too many files. Some were not added.",
+        });
+      }
+
+      setUploadingCount((count) => count + uploadable.length);
+
       void (async () => {
         try {
           const next = await Promise.all(
-            totalSized.map(async (file) => ({
-              id: nanoid(),
-              type: "file" as const,
-              url: await readFileAsDataUrl(file),
-              mediaType: file.type || "application/octet-stream",
-              filename: file.name,
-              size: file.size,
-            }))
+            uploadable.map(async (file) => {
+              const uploaded = onFileUpload
+                ? await onFileUpload(file)
+                : {
+                    url: await readFileAsDataUrl(file),
+                    mediaType: file.type || "application/octet-stream",
+                    filename: file.name,
+                    size: file.size,
+                  };
+
+              return {
+                id: nanoid(),
+                type: "file" as const,
+                url: uploaded.url,
+                mediaType:
+                  uploaded.mediaType || file.type || "application/octet-stream",
+                filename: uploaded.filename || file.name,
+                fileId: uploaded.fileId,
+                size: uploaded.size ?? file.size,
+              };
+            })
           );
 
           setItems((prev) => {
@@ -378,15 +432,28 @@ export const PromptInput = ({
             }
             return prev.concat(capped);
           });
-        } catch {
+        } catch (error) {
           onError?.({
-            code: "accept",
-            message: "Unable to read one or more files.",
+            code: "upload",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Unable to upload one or more files.",
           });
+        } finally {
+          setUploadingCount((count) => Math.max(0, count - uploadable.length));
         }
       })();
     },
-    [items, matchesAccept, maxFiles, maxFileSize, maxTotalFileSize, onError]
+    [
+      items,
+      matchesAccept,
+      maxFiles,
+      maxFileSize,
+      maxTotalFileSize,
+      onError,
+      onFileUpload,
+    ]
   );
 
   const remove = useCallback((id: string) => {
@@ -472,11 +539,22 @@ export const PromptInput = ({
   const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
 
-    const files: FileUIPart[] = items.map((item) => ({
+    if (uploadingCount > 0) {
+      onError?.({
+        code: "upload",
+        message: "Please wait for file uploads to finish.",
+      });
+      return;
+    }
+
+    const files: PromptInputAttachmentItem[] = items.map((item) => ({
+      id: item.id,
       type: item.type,
       url: item.url,
       mediaType: item.mediaType,
       filename: item.filename,
+      fileId: item.fileId,
+      size: item.size,
     }));
 
     const shouldClear = onSubmit(
@@ -496,9 +574,10 @@ export const PromptInput = ({
       remove,
       clear,
       openFileDialog,
+      isUploading: uploadingCount > 0,
       fileInputRef: inputRef,
     }),
-    [items, add, remove, clear, openFileDialog]
+    [items, add, remove, clear, openFileDialog, uploadingCount]
   );
 
   return (

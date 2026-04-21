@@ -35,12 +35,10 @@ export async function uploadFile(
   _mimeType: string
 ): Promise<{ fileId: string; url: string }> {
   try {
+    void _mimeType;
     const client = getImageKitClient();
-    // Convert buffer to base64 for ImageKit upload
-    const base64 = buffer.toString("base64");
-    
     const result = await client.upload({
-      file: base64,
+      file: buffer,
       fileName: filename,
       useUniqueFileName: true, // ImageKit generates unique filename
       folder: "/platvo-files", // Optional: organize files in folders

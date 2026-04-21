@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { UseChatHelpers } from "@ai-sdk/react";
-import { ChatStatus, FileUIPart, UIMessage } from "ai";
+import { ChatStatus, UIMessage } from "ai";
 import React, {
   Dispatch,
   FC,
@@ -12,6 +12,7 @@ import React, {
 import {
   PromptInput,
   PromptInputAttachment,
+  type PromptInputAttachmentItem,
   PromptInputAttachments,
   PromptInputButton,
   PromptInputModelSelect,
@@ -23,6 +24,7 @@ import {
   PromptInputTextarea,
   PromptInputToolbar,
   PromptInputTools,
+  type PromptInputUploadedAttachment,
   usePromptInputAttachments,
 } from "../ai-elements/prompt-input";
 import { cn } from "@/lib/utils";
@@ -45,15 +47,63 @@ import {
   type PlanAccessPlan,
 } from "@/lib/subscription/plan-access";
 
-const MAX_CHAT_FILES = 3;
-const MAX_CHAT_FILE_SIZE = 600 * 1024;
-const MAX_CHAT_TOTAL_FILE_SIZE = 600 * 1024;
-const MAX_CHAT_FILE_SIZE_KB = Math.floor(MAX_CHAT_FILE_SIZE / 1024);
-const MAX_CHAT_TOTAL_FILE_SIZE_KB = Math.floor(
-  MAX_CHAT_TOTAL_FILE_SIZE / 1024
-);
+const MAX_CHAT_FILES = 5;
+const MAX_CHAT_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_CHAT_TOTAL_FILE_SIZE = 25 * 1024 * 1024;
 const CHAT_FILE_ACCEPT =
   "image/*,.pdf,.txt,.md,.csv,.json,text/*,application/pdf,application/json,text/csv";
+
+type FileUploadResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    id: string;
+    filename: string;
+    mimeType: string;
+    size: number;
+    url: string;
+  };
+};
+
+function formatFileSize(bytes: number) {
+  if (bytes >= 1024 * 1024) {
+    return `${Math.round(bytes / 1024 / 1024)} MB`;
+  }
+
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
+async function uploadChatFile(file: File): Promise<PromptInputUploadedAttachment> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/files/upload", {
+    method: "POST",
+    body: formData,
+  });
+  const contentType = response.headers.get("content-type") ?? "";
+  const payload = contentType.includes("application/json")
+    ? ((await response.json().catch(() => null)) as FileUploadResponse | null)
+    : null;
+
+  if (!response.ok || !payload?.data) {
+    if (response.status === 413) {
+      throw new Error(
+        "This file is larger than the server upload limit. Increase the upload limit and try again."
+      );
+    }
+
+    throw new Error(payload?.message ?? "File upload failed. Please try again.");
+  }
+
+  return {
+    fileId: payload.data.id,
+    url: payload.data.url,
+    filename: payload.data.filename,
+    mediaType: payload.data.mimeType,
+    size: payload.data.size,
+  };
+}
 
 type Props = {
   chatId: string;
@@ -178,7 +228,7 @@ const ChatInput: FC<Props> = ({
     files = [],
   }: {
     text?: string;
-    files?: FileUIPart[];
+    files?: PromptInputAttachmentItem[];
   }) => {
     // Generation limit check removed - unlimited for now
     if (disabled) return false;
@@ -228,6 +278,7 @@ const ChatInput: FC<Props> = ({
         url: file.url,
         mediaType: file.mediaType,
         filename: file.filename,
+        fileId: file.fileId,
       });
     });
 
@@ -283,10 +334,15 @@ const ChatInput: FC<Props> = ({
       maxFileSize={MAX_CHAT_FILE_SIZE}
       maxTotalFileSize={MAX_CHAT_TOTAL_FILE_SIZE}
       multiple
+      onFileUpload={uploadChatFile}
       onError={(error) => {
         if (error.code === "max_file_size") {
           toast.error(
-            `Uploads are limited to ${MAX_CHAT_FILE_SIZE_KB} KB per file and ${MAX_CHAT_TOTAL_FILE_SIZE_KB} KB total per message.`
+            `Uploads are limited to ${formatFileSize(
+              MAX_CHAT_FILE_SIZE
+            )} per file and ${formatFileSize(
+              MAX_CHAT_TOTAL_FILE_SIZE
+            )} total per message.`
           );
           return;
         }
@@ -484,7 +540,7 @@ function ChatSubmitButton({
   return (
     <PromptInputSubmit
       status={status}
-      disabled={!hasMessageContent || disabled}
+      disabled={!hasMessageContent || attachments.isUploading || disabled}
       className="absolute right-1.5 sm:right-2 rounded-full bottom-1 sm:bottom-1.5 !text-white"
     >
       <ArrowUpIcon size={20} className="sm:w-6 sm:h-6" />

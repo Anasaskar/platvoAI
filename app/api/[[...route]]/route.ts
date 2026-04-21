@@ -4,6 +4,7 @@ import { handle } from "hono/vercel";
 import { noteRoute } from "./note";
 import { getAuthUser } from "@/lib/hono/hono-middlware";
 import { chatRoute } from "./chat";
+import { filesRoute } from "./files";
 import { subscriptionRoute } from "./subscription";
 import { galleryRoute } from "./gallery";
 
@@ -31,6 +32,7 @@ const routes = app
   .basePath("/api")
   .route("/note", noteRoute)
   .route("/chat", chatRoute)
+  .route("/files", filesRoute)
   .route("/subscription", subscriptionRoute)
   .route("/gallery", galleryRoute);
 

@@ -28,6 +28,7 @@ import {
   getEffectiveMaxOutputTokens,
   isModelLockedForPlan,
 } from "@/lib/subscription/plan-access";
+import { addFileContextToMessages } from "@/lib/files/message-file-context";
 
 
 const chatSchema = z.object({
@@ -174,7 +175,11 @@ export const chatRoute = new Hono()
         return { ...msg, parts: sanitizedParts };
       });
 
-      const modelMessages = convertToModelMessages(sanitizedMessages);
+      const messagesWithFileContext = await addFileContextToMessages(
+        sanitizedMessages,
+        user.id
+      );
+      const modelMessages = convertToModelMessages(messagesWithFileContext);
       
       // Also sanitize tool call IDs in the converted model messages
       // Some models (like OpenAI) require tool call IDs to be <= 40 characters
