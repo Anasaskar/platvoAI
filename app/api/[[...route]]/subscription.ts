@@ -21,6 +21,7 @@ import Stripe from "stripe";
 
 const DEFAULT_NO_PAID_SUBSCRIPTION_MESSAGE =
   "You don't have an active paid subscription. Please upgrade to continue.";
+const PRODUCTION_APP_URL = "https://www.platvo.com/home";
 
 const SUBSCRIPTION_STATUS_PRIORITY: Record<string, number> = {
   active: 3,
@@ -45,16 +46,66 @@ function getStripeAwareErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function isBindOnlyHostname(hostname: string) {
+  return ["0.0.0.0", "0.0.0", "::", "[::]"].includes(hostname);
+}
+
+function normalizeLocalCallbackOrigin(origin: string) {
+  const parsed = new URL(origin);
+
+  if (isBindOnlyHostname(parsed.hostname)) {
+    parsed.hostname = "localhost";
+
+    if (parsed.protocol === "https:") {
+      parsed.protocol = "http:";
+    }
+  }
+
+  return parsed.origin;
+}
+
+function getPreferredCallbackOrigin(requestUrl: string) {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_APP_URL || process.env.BETTER_AUTH_URL;
+
+  if (configuredUrl) {
+    try {
+      return normalizeLocalCallbackOrigin(new URL(configuredUrl).origin);
+    } catch {
+      // Fall back to the request origin below.
+    }
+  }
+
+  const request = new URL(requestUrl);
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    isBindOnlyHostname(request.hostname)
+  ) {
+    return new URL(PRODUCTION_APP_URL).origin;
+  }
+
+  return normalizeLocalCallbackOrigin(request.origin);
+}
+
 function getSafeCallbackUrl(rawUrl: string | undefined, requestUrl: string): string {
-  const origin = new URL(requestUrl).origin;
+  const origin = getPreferredCallbackOrigin(requestUrl);
 
   if (!rawUrl) {
     return `${origin}/billing`;
   }
 
   try {
-    const parsed = new URL(rawUrl);
-    return parsed.origin === origin ? parsed.toString() : `${origin}/billing`;
+    const parsed = new URL(rawUrl, origin);
+    const normalizedRawOrigin = normalizeLocalCallbackOrigin(parsed.origin);
+    const isTrustedOrigin =
+      normalizedRawOrigin === origin || isBindOnlyHostname(parsed.hostname);
+
+    if (!isTrustedOrigin) {
+      return `${origin}/billing`;
+    }
+
+    return `${origin}${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
     return `${origin}/billing`;
   }
