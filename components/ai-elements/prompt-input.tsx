@@ -272,11 +272,26 @@ export const PromptInput = ({
       if (!accept || accept.trim() === "") {
         return true;
       }
-      // Simple check: if accept includes "image/*", filter to images; otherwise allow.
-      if (accept.includes("image/*")) {
-        return f.type.startsWith("image/");
-      }
-      return true;
+
+      const acceptedTypes = accept
+        .split(",")
+        .map((type) => type.trim().toLowerCase())
+        .filter(Boolean);
+      const fileType = f.type.toLowerCase();
+      const fileName = f.name.toLowerCase();
+
+      return acceptedTypes.some((acceptedType) => {
+        if (acceptedType.startsWith(".")) {
+          return fileName.endsWith(acceptedType);
+        }
+
+        if (acceptedType.endsWith("/*")) {
+          const prefix = acceptedType.slice(0, -1);
+          return fileType.startsWith(prefix);
+        }
+
+        return fileType === acceptedType;
+      });
     },
     [accept]
   );
