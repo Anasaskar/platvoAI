@@ -3,6 +3,7 @@ import {
   RiScanLine,
   RiChatAiLine,
   RiImageLine,
+  RiSearchLine,
   RiSettings3Line,
   RiBillLine,
 } from "@remixicon/react";
@@ -23,18 +24,14 @@ import NavUser from "./nav-user";
 import NavMenu from "./nav-menu";
 import NavChats from "./nav-chats";
 import { useTranslation } from "@/lib/i18n";
-
 const AppSidebar = ({ ...props }: React.ComponentProps<typeof Sidebar>) => {
   const router = useRouter();
   const { clearBearerToken } = useAuthToken();
   const [isSigningOut, setIsSigningOut] = useState<boolean>(false);
   const t = useTranslation();
-
   const { useSession, signOut } = authClient;
   const { data: session, isPending } = useSession();
-
   const user = session?.user;
-
   const navMenu = [
     {
       title: t("sidebar.home"),
@@ -42,14 +39,19 @@ const AppSidebar = ({ ...props }: React.ComponentProps<typeof Sidebar>) => {
       icon: RiScanLine,
     },
     {
-      title: t("sidebar.aiChat"),
+      title: "AI Chat",
       url: "/chat",
       icon: RiChatAiLine,
     },
     {
-      title: t("sidebar.gallery"),
+      title: "AI Image",
       url: "/gallery",
       icon: RiImageLine,
+    },
+    {
+      title: "Web Search",
+      url: "/search",
+      icon: RiSearchLine,
     },
     {
       title: t("sidebar.billing"),
@@ -62,7 +64,6 @@ const AppSidebar = ({ ...props }: React.ComponentProps<typeof Sidebar>) => {
       icon: RiSettings3Line,
     },
   ];
-
   const handleLogout = () => {
     if (isSigningOut) return;
     setIsSigningOut(true);
@@ -80,7 +81,6 @@ const AppSidebar = ({ ...props }: React.ComponentProps<typeof Sidebar>) => {
       },
     });
   };
-
   return (
     <Sidebar {...props} className="z-[99]">
       <SidebarHeader>
@@ -110,5 +110,4 @@ const AppSidebar = ({ ...props }: React.ComponentProps<typeof Sidebar>) => {
     </Sidebar>
   );
 };
-
 export default AppSidebar;
